@@ -394,14 +394,20 @@ details[open] > .surf-more{display:none}
   -webkit-mask:var(--m) center/contain no-repeat;mask:var(--m) center/contain no-repeat;
 }
 /* ── My install: multi-step setup wizard ────────────────────────────────── */
-.install-setup{margin-bottom:var(--space-7)}
+/* One card holding both "Will this work for me?" and "I'm on" as sections. */
+.setup-card{
+  margin-bottom:var(--space-7);
+  border:1px solid var(--border);border-radius:var(--radius-lg);background:var(--surface);
+}
+.setup-card:not(:has(> :not([hidden]))){display:none} /* hide when both sections empty */
+.setup-card--editing .upgrade-filter{display:none}     /* hide version row while editing profile */
+.install-setup{margin:0}
 .install-setup[hidden]{display:none}
 
-/* collapsed summary card */
+/* collapsed summary — a borderless section of .setup-card */
 .install-summary{
   display:flex;align-items:center;gap:var(--space-5) var(--space-6);flex-wrap:wrap;
   padding:var(--space-6) var(--space-7);
-  border:1px solid var(--border);border-radius:var(--radius-lg);background:var(--surface);
 }
 .install-summary__head{display:flex;flex-direction:column;gap:2px;margin-right:auto;min-width:11rem}
 .install-summary__title-row{display:flex;align-items:center;gap:var(--space-3)}
@@ -435,9 +441,7 @@ details[open] > .surf-more{display:none}
 
 /* wizard card */
 .install-wizard{
-  border:1px solid var(--border);border-radius:var(--radius-lg);background:var(--surface);
-  padding:var(--space-9) var(--space-8) var(--space-7);
-  box-shadow:0 1px 2px rgba(0,0,0,.04);
+  padding:var(--space-8) var(--space-8) var(--space-7);
 }
 .install-wizard__top{display:flex;align-items:center;gap:var(--space-4);margin-bottom:var(--space-8)}
 .install-wizard__dots{display:flex;gap:6px;margin-right:auto}
@@ -471,31 +475,30 @@ details[open] > .surf-more{display:none}
 .install-wizard__foot{display:flex;align-items:center;gap:var(--space-3)}
 .install-wizard__foot .spacer{margin-left:auto}
 .upgrade-filter{
-  display:grid;grid-template-columns:auto minmax(10rem,1fr);align-items:center;gap:var(--space-4) var(--space-6);
-  margin:0 0 var(--space-7);font-size:var(--text-sm);color:var(--muted);
+  display:flex;align-items:center;flex-wrap:wrap;gap:var(--space-3) var(--space-5);
+  padding:var(--space-6) var(--space-7);
+  font-size:var(--text-sm);color:var(--muted);
 }
 .upgrade-filter[hidden]{display:none}
-.upgrade-filter__label{font-weight:600;color:var(--text)}
+/* divider between the profile section (top) and the version row (below) */
+.install-setup:not([hidden]) + .upgrade-filter{border-top:1px solid var(--border-soft)}
+.upgrade-filter__label{font-weight:700;color:var(--text);font-size:var(--text-md)}
 .upgrade-filter select{
-  width:fit-content;max-width:100%;padding:var(--space-4) var(--space-6);
-  border:1px solid var(--border);border-radius:var(--radius-md);
-  background:var(--surface);color:var(--text);font:inherit;
+  max-width:100%;padding:var(--space-2) var(--space-4);
+  border:1px solid var(--border);border-radius:var(--radius-sm);
+  background:transparent;color:var(--text);font:inherit;font-size:var(--text-sm);cursor:pointer;
 }
-.upgrade-filter__status{grid-column:2;color:var(--muted);font-size:var(--text-xs);line-height:1.45}
+.upgrade-filter select:hover{border-color:var(--muted)}
+.upgrade-filter__status{flex-basis:100%;margin:0;color:var(--muted);font-size:var(--text-xs);line-height:1.45}
 .upgrade-filter__status[hidden]{display:none}
-.upgrade-path{
-  margin-top:var(--space-7);padding:var(--space-6);
-  border:1px solid var(--border-soft);border-radius:var(--radius-md);
-  background:color-mix(in srgb,var(--text) 3%,var(--surface-2));
-}
+.upgrade-path{margin-top:var(--space-7)}
 .upgrade-path__title{font-size:var(--text-xs);font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);margin-bottom:var(--space-3)}
-.upgrade-path__summary{font-size:var(--text-sm);line-height:1.5;color:var(--muted)}
+.upgrade-path__verdict{font-size:var(--text-base);font-weight:600;color:var(--text);line-height:1.5;margin-bottom:var(--space-3)}
+.upgrade-path__summary{font-size:var(--text-xs);line-height:1.5;color:var(--muted)}
 .upgrade-path .evidence:first-of-type{margin-top:var(--space-5)}
 @media(max-width:520px){
-  .install-summary,.install-wizard{padding:var(--space-6)}
+  .install-summary,.install-wizard,.upgrade-filter{padding:var(--space-6)}
   .install-summary__head{margin-right:0}
-  .upgrade-filter{grid-template-columns:1fr}
-  .upgrade-filter__status{grid-column:1}
 }
 .rec-pill{
   font-size:var(--text-xs);font-weight:600;white-space:nowrap;
@@ -622,8 +625,9 @@ details[open] > .surf-more{display:none}
 .evidence-toggle{margin-top:var(--space-6)}
 .evidence-toggle__summary{
   display:inline-flex;align-items:center;gap:var(--space-3);cursor:pointer;list-style:none;
-  font-size:var(--text-sm);font-weight:600;color:var(--link);
+  font-size:var(--text-sm);font-weight:600;color:var(--muted);
 }
+.evidence-toggle__summary:hover{color:var(--text)}
 .evidence-toggle__summary::-webkit-details-marker{display:none}
 .evidence-toggle__summary::before{content:'▸';font-size:.8em;color:var(--muted);transition:transform .15s ease}
 .evidence-toggle[open] .evidence-toggle__summary::before{transform:rotate(90deg)}
@@ -750,14 +754,6 @@ footer a:hover{color:var(--text)}
         <a class="btn btn--primary"
            href="https://github.com/iClawApp/openclaw-release-radar/issues/new?title=Track%20package%3A%20&amp;labels=package-request"
            target="_blank" rel="noopener">Request a Package →</a>
-        <a class="btn btn--ghost"
-           href="https://github.com/iClawApp/openclaw-release-radar"
-           target="_blank" rel="noopener">
-          <svg class="btn__gh-ico" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
-            <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"/>
-          </svg>
-          GitHub
-        </a>
       </div>
     </section>
   </main>
@@ -767,10 +763,6 @@ footer a:hover{color:var(--text)}
   <main>
     <a class="detail-back" href="#/">← Tracked packages</a>
     <h1 class="detail-title">openclaw</h1>
-    <p class="page-sub">
-      Source: <a href="https://github.com/openclaw/openclaw" target="_blank" rel="noopener">openclaw/openclaw</a>
-      · Install Confidence 0–10
-    </p>
 
     <section class="score-history" id="scoreHistory" hidden aria-labelledby="scoreHistoryTitle">
       <div class="help-head">
@@ -788,18 +780,24 @@ footer a:hover{color:var(--text)}
       <div class="score-history__chart" id="scoreHistoryChart"></div>
     </section>
 
-    <div class="install-setup" id="profileFilter" hidden></div>
-
-    <div class="upgrade-filter" id="upgradeFilter" hidden>
-      <label class="upgrade-filter__label" for="currentVersionSelect">I’m on:</label>
-      <select id="currentVersionSelect"></select>
-      <div class="upgrade-filter__status" id="upgradeFilterStatus" hidden></div>
+    <div class="setup-card" id="setupCard">
+      <div class="install-setup" id="profileFilter" hidden></div>
+      <div class="upgrade-filter" id="upgradeFilter" hidden>
+        <label class="upgrade-filter__label" for="currentVersionSelect">I’m on:</label>
+        <select id="currentVersionSelect"></select>
+        <div class="upgrade-filter__status" id="upgradeFilterStatus" hidden></div>
+      </div>
     </div>
 
     <div class="rec-block" id="recBlock" hidden>
       <div class="rec-target" id="recTarget" hidden></div>
       <div class="releases" id="releases"></div>
     </div>
+
+    <p class="page-sub page-sub--center" style="margin:var(--space-10) 0 0">
+      Source: <a href="https://github.com/openclaw/openclaw" target="_blank" rel="noopener">openclaw/openclaw</a>
+      · Install Confidence 0–10
+    </p>
   </main>
 </div>
 
@@ -1062,10 +1060,10 @@ function renderCurrentVersionSelector(rows) {
   const current = releaseByTag(selectedCurrentTag);
   const newerCount = current ? choices.filter((r) => isNewerThan(r, current)).length : 0;
   const text = !selectedCurrentTag
-    ? 'Pick your current version to see what an upgrade adds, fixes, or leaves unchanged.'
+    ? ''
     : newerCount
-      ? `Upgrade-path evidence is active for ${newerCount} newer ${newerCount === 1 ? 'release' : 'releases'}.`
-      : 'Selected version is already the newest release in this window.';
+      ? 'Open a newer release below to see what the upgrade changes for you.'
+      : "You're on the newest release — nothing to upgrade to.";
   status.hidden = !text;
   status.textContent = text;
 
@@ -1141,29 +1139,31 @@ function installChipsHtml(max = 8) {
 function installSummarySubText() {
   if (selectedProfileSurfaces.size === 0) return "Tell us what you use, and we'll check each update for your setup.";
   const missing = missingInstallProfileRequirements();
-  if (!missing.length) return 'Each update is now scored for the way you use it.';
+  // Profile complete → the chips already say it; no need for a redundant caption.
+  if (!missing.length) return '';
   return `Also pick ${missing.join(' and ')} to finish.`;
 }
 
 function installSummaryHtml() {
   const has = selectedProfileSurfaces.size > 0;
   const chips = has ? `<div class="install-summary__chips">${installChipsHtml()}</div>` : '';
-  const clearBtn = has ? `<button class="btn-ghost" type="button" data-action="clear">Clear</button>` : '';
+  const sub = installSummarySubText();
+  // The "?" explainer is for first-time setup — once a profile is set, drop it.
+  const help = has ? '' :
+    `<details class="help-popover"><summary class="help-button" title="How this works" aria-label="How this works">?</summary>`
+      + `<div class="score-explain"><div class="score-explain__title">How does this work?</div><ul>`
+        + `<li>Tell us your computer, the apps you chat through, and the AI you use.</li>`
+        + `<li>We then count only the problems that could affect <strong>you</strong> — and ignore the ones that can't.</li>`
+        + `<li>Serious security problems are always shown, no matter your setup.</li>`
+      + `</ul></div></details>`;
   return `<div class="install-summary">`
     + `<div class="install-summary__head">`
-      + `<div class="install-summary__title-row"><span class="install-summary__title">Will this work <em>for me?</em></span>`
-        + `<details class="help-popover"><summary class="help-button" title="How this works" aria-label="How this works">?</summary>`
-          + `<div class="score-explain"><div class="score-explain__title">How does this work?</div><ul>`
-            + `<li>Tell us your computer, the apps you chat through, and the AI you use.</li>`
-            + `<li>We then count only the problems that could affect <strong>you</strong> — and ignore the ones that can't.</li>`
-            + `<li>Serious security problems are always shown, no matter your setup.</li>`
-          + `</ul></div></details></div>`
-      + `<span class="install-summary__sub">${esc(installSummarySubText())}</span>`
+      + `<div class="install-summary__title-row"><span class="install-summary__title">Will this work <em>for me?</em></span>${help}</div>`
+      + (sub ? `<span class="install-summary__sub">${esc(sub)}</span>` : '')
     + `</div>`
     + chips
     + `<div class="install-summary__actions">`
       + `<button class="btn-primary" type="button" data-action="open">${has ? 'Edit my setup' : 'Tell us what you use'}</button>`
-      + clearBtn
     + `</div>`
   + `</div>`;
 }
@@ -1219,6 +1219,8 @@ function renderInstallSetup() {
   const filter = document.getElementById('profileFilter');
   if (!filter) return;
   filter.innerHTML = profileWizardOpen ? installWizardHtml() : installSummaryHtml();
+  // While editing the profile, the wizard takes over the card — hide the version row.
+  document.getElementById('setupCard')?.classList.toggle('setup-card--editing', profileWizardOpen);
 }
 
 function renderProfileFilter(rows) {
@@ -1989,13 +1991,59 @@ function upgradeSection(title, issues, emptyText, note = '') {
   );
 }
 
+function isSeriousUpgradeIssue(i) {
+  return !!i && (i.severity === 'critical' || i.severity === 'high');
+}
+
+// Human-readable name for a risk: surface + a tidied title (strip leading "[Bug]:",
+// "[Regression]", and stray leading colons/dashes that read as noise).
+function upgradeRiskLabel(i) {
+  let t = String(i.title || '').trim();
+  let prev;
+  do { prev = t; t = t.replace(/^\[[^\]]*\]\s*/, '').replace(/^[:\-–]\s*/, '').trim(); } while (t !== prev);
+  if (t.length > 52) t = t.slice(0, 50).trimEnd() + '…';
+  const surf = i.surface?.label;
+  return surf ? `${surf} — ${t}` : t;
+}
+
+// Plain-language verdict for a non-technical reader — computed entirely from the
+// already-classified buckets (severity is decided once at ingest, not per request).
+// No runtime AI. NOTE: counts are deliberately omitted — until the buckets are
+// filtered to serious server-side (data-selection), the visible items are capped
+// and a precise "N serious risks" would be misleading. Naming the top-sorted
+// (most-serious-first) risks is accurate today; counts come with the filter.
+function upgradeVerdict(buckets) {
+  if (buckets.state !== 'ready') return '';
+  const newSerious = (buckets.newRisks || []).filter(isSeriousUpgradeIssue);
+  const hasFixes = bucketCount(buckets, 'fixedByUpgrade') > 0;
+  if (!newSerious.length) {
+    return hasFixes
+      ? 'Looks safe for your setup — it clears older issues and adds no serious new risks.'
+      : 'Nothing serious changes for your setup with this upgrade.';
+  }
+  const names = newSerious.slice(0, 2).map(upgradeRiskLabel);
+  const lead = hasFixes ? 'Mostly a win, but a couple of things to watch' : 'Be careful';
+  return `${lead} — serious new risks for your setup: ${names.join('; ')}.`;
+}
+
 function upgradePathHtml(target) {
   const buckets = upgradePathBuckets(target);
   const summary = upgradePathSummaryText(buckets, target);
   if (!summary) return '';
 
-  let body = `<div class="upgrade-path__title">Upgrade path</div><div class="upgrade-path__summary">${esc(summary)}</div>`;
-  if (buckets.state === 'ready') {
+  const title = `<div class="upgrade-path__title">Upgrade path</div>`;
+
+  // Non-ready states (same / not-newer / unclear) are just a short status line —
+  // nothing to collapse.
+  if (buckets.state !== 'ready') {
+    return `<div class="upgrade-path">${title}<div class="upgrade-path__summary">${esc(summary)}</div></div>`;
+  }
+
+  // Ready: keep only the human verdict visible; fold the technical summary,
+  // evidence coverage and full issue lists behind one "Show upgrade details" click.
+  const verdict = upgradeVerdict(buckets);
+  let body = `<div class="upgrade-path__summary">${esc(summary)}</div>`;
+  {
     if (buckets.evidenceLimited) {
       body += evidenceSectionHtml(
         'Evidence coverage',
@@ -2057,7 +2105,13 @@ function upgradePathHtml(target) {
       );
     }
   }
-  return `<div class="upgrade-path">${body}</div>`;
+  return `<div class="upgrade-path">`
+    + title
+    + (verdict ? `<div class="upgrade-path__verdict">${esc(verdict)}</div>` : '')
+    + `<details class="evidence-toggle"><summary class="evidence-toggle__summary">Show upgrade details</summary>`
+      + `<div class="evidence-toggle__body">${body}</div>`
+    + `</details>`
+  + `</div>`;
 }
 
 // Wrap evidence in a collapsed disclosure so the expanded release shows just the
