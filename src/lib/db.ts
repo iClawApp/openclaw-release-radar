@@ -480,6 +480,44 @@ export function issuesForVersion(tag: string): JoinedIssue[] {
   return issuesForVersionStmt.all(tag) as unknown as JoinedIssue[];
 }
 
+const rawIssuesForVersionStmt = db.prepare(`
+SELECT i.*
+FROM issues i
+JOIN releases target ON target.tag = ?
+WHERE
+  target.published_at IS NOT NULL
+  AND i.created_at < COALESCE(
+        (SELECT MIN(next.published_at) FROM releases next
+         WHERE next.published_at > target.published_at),
+        '9999-12-31T23:59:59Z'
+      )
+  AND (i.closed_at IS NULL OR i.closed_at > target.published_at)
+ORDER BY i.updated_at DESC
+`);
+
+export function rawIssuesForVersion(tag: string): IssueRow[] {
+  return rawIssuesForVersionStmt.all(tag) as unknown as IssueRow[];
+}
+
+const rawIssueCountForVersionStmt = db.prepare(`
+SELECT COUNT(*) AS n
+FROM issues i
+JOIN releases target ON target.tag = ?
+WHERE
+  target.published_at IS NOT NULL
+  AND i.created_at < COALESCE(
+        (SELECT MIN(next.published_at) FROM releases next
+         WHERE next.published_at > target.published_at),
+        '9999-12-31T23:59:59Z'
+      )
+  AND (i.closed_at IS NULL OR i.closed_at > target.published_at)
+`);
+
+export function rawIssueCountForVersion(tag: string): number {
+  const row = rawIssueCountForVersionStmt.get(tag) as { n: number } | undefined;
+  return row?.n ?? 0;
+}
+
 // Issues CLOSED during a release's reign — the "fixes credit" for that release.
 // An issue counts as fixed-by-R if its closed_at falls inside R's reign window
 // [R.published_at, next_release.published_at). This is what the release shipped
