@@ -60,18 +60,31 @@ function seedServerUpgrade(currentTag, targetTag) {
     itemLimit: 25,
     evidenceLimited: false,
     buckets: {
-      newRisks: { total: 13, items: targetIssues.slice(0, 3) },
+      newRisks: {
+        total: 13,
+        quality: { confirmed: 10, unverified: 3, riskUnits: 8.4 },
+        items: targetIssues.slice(0, 3),
+      },
       fixedByUpgrade: {
         total: 3,
+        quality: { confirmed: 3, unverified: 0, riskUnits: 2.8 },
         items: currentIssues.slice(0, 2).map((i, idx) => ({
           ...i,
           state: 'closed',
           closedAt: idx === 0 ? '2026-05-29T12:00:00Z' : '2026-05-30T12:00:00Z',
         })),
       },
-      possibleFixes: { total: 0, items: [] },
-      stillPresent: { total: 2, items: targetIssues.slice(3, 5) },
-      unclear: { total: 1, items: targetIssues.slice(5, 6) },
+      possibleFixes: { total: 0, quality: { confirmed: 0, unverified: 0, riskUnits: 0 }, items: [] },
+      stillPresent: {
+        total: 2,
+        quality: { confirmed: 2, unverified: 0, riskUnits: 1.8 },
+        items: targetIssues.slice(3, 5),
+      },
+      unclear: {
+        total: 1,
+        quality: { confirmed: 0, unverified: 1, riskUnits: 0.3 },
+        items: targetIssues.slice(5, 6),
+      },
     },
   });
 }
@@ -110,6 +123,16 @@ upgradePathDetails.set(upgradePathCacheKey('v2026.5.27', 'v2026.5.28'), {
 });
 globalThis.__upgradeSmoke = {
   tags: allReleases.map((r) => r.tag),
+  recommendationMargin: {
+    wideDelta: pickGeneralRecommendedRelease([
+      { tag: 'newer-but-weaker', status: 'eligible', finalScore: 5.8, recommended: true, advisories: { affected: { total: 0 } } },
+      { tag: 'older-but-much-stronger', status: 'eligible', finalScore: 8.1, recommended: false, advisories: { affected: { total: 0 } } },
+    ])?.tag,
+    closeDelta: pickGeneralRecommendedRelease([
+      { tag: 'newer-close-enough', status: 'eligible', finalScore: 7.4, recommended: true, advisories: { affected: { total: 0 } } },
+      { tag: 'older-slightly-stronger', status: 'eligible', finalScore: 8.1, recommended: false, advisories: { affected: { total: 0 } } },
+    ])?.tag,
+  },
   modern: bucketFor('v2026.5.19', 'v2026.5.28'),
   near,
   partial: bucketFor('v2026.5.18', 'v2026.5.28'),
@@ -133,6 +156,8 @@ globalThis.fetch = () => new Promise(() => {});
 (0, eval)(`${script}\n${harness}`);
 const result = globalThis.__upgradeSmoke;
 
+assert.equal(result.recommendationMargin.wideDelta, 'older-but-much-stronger');
+assert.equal(result.recommendationMargin.closeDelta, 'newer-close-enough');
 assert.equal(result.modern.state, 'ready');
 assert.equal(result.modern.evidenceLimited, false);
 assert.equal(result.modern.currentRows, 123);
@@ -140,30 +165,33 @@ assert.equal(result.modern.targetRows, 456);
 assert.ok(result.modern.newRisks.length > 0, 'expected new risks for v2026.5.19 → v2026.5.28');
 assert.equal(result.modern.fixedByUpgrade.length, 2, 'expected server-backed fixed issue rows');
 assert.ok(result.modern.stillPresent.length > 0, 'expected at least one already-exposed issue');
-assert.match(result.modern.summary, /newly seen target-evidence risks/);
+assert.match(result.modern.summary, /10 confirmed risks/);
+assert.match(result.modern.summary, /3 unverified reports/);
 assert.doesNotMatch(result.modern.summary, /timestamp-confirmed/);
 assert.match(result.modern.summary, /3 closed before target publish/);
-assert.match(result.modern.summary, /counts use all classified attribution rows/);
+assert.doesNotMatch(result.modern.summary, /limited|coverage|proof|classified attribution/i);
 assert.match(result.modern.html, /Risks newly seen in target evidence/);
 assert.match(result.modern.html, /Fixed/);
-assert.match(result.modern.html, /Evidence source/);
-assert.match(result.modern.html, /123 classified \/ 123 raw/);
+assert.doesNotMatch(result.modern.html, /Evidence source|Evidence coverage|not proof|limited evidence|limited coverage/i);
 assert.match(result.modern.html, /Known risks still present/);
-assert.match(result.near.summary, /missing rows are not proof of fixes/);
+assert.doesNotMatch(result.near.summary, /missing rows|not proof|limited|coverage/i);
 assert.equal(result.partial.evidenceLimited, true);
-assert.match(result.partial.summary, /classification coverage is incomplete/);
-assert.match(result.partial.summary, /current 10\/20 classified\/raw/);
-assert.match(result.partial.summary, /target 11\/30 classified\/raw/);
+assert.doesNotMatch(result.partial.summary, /classification coverage|empty buckets|not proof|limited/i);
 assert.doesNotMatch(result.partial.summary, /limited for ,/);
 assert.equal(result.raw.evidenceLimited, true);
-assert.match(result.raw.summary, /80 raw new risks/);
+assert.match(result.raw.summary, /no confirmed risks/);
+assert.doesNotMatch(result.raw.summary, /many/);
+assert.match(result.raw.summary, /80 unverified reports/);
 assert.match(result.raw.summary, /0 closed before target publish/);
-assert.match(result.raw.summary, /limited raw triage evidence/);
+assert.doesNotMatch(result.raw.summary, /limited raw triage evidence|not proof|coverage/i);
 assert.doesNotMatch(result.raw.summary, /limited for ,/);
 assert.doesNotMatch(result.raw.html, /raw timing rows shown/);
-assert.match(result.raw.html, /Raw issue rows are bucketed by timing/);
+assert.doesNotMatch(result.raw.html, /Raw issue rows are bucketed by timing|Evidence coverage|not proof/i);
 assert.equal(result.same.state, 'same');
 assert.match(result.same.summary, /selected current version/);
+assert.equal((html.match(/Evidence is best available, not exhaustive/g) || []).length, 1);
+assert.doesNotMatch(html, /Related issues|related issues|Reported affected areas:/);
+assert.match(html, /Relevant issues|Relevant watch areas/);
 
 console.log(JSON.stringify({
   fixture: fixture._fixture,

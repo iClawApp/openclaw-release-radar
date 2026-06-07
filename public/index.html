@@ -355,6 +355,12 @@ main.main-home{max-width:880px}
 }
 .release--recommended:hover{background:color-mix(in srgb,var(--ok) 10%,transparent)}
 .release--skip .release__tag{color:var(--muted)}
+.release--current{
+  position:relative;
+  background:color-mix(in srgb,var(--link) 8%,var(--surface));
+  box-shadow:inset 4px 0 0 var(--link);
+}
+.release--current:hover{background:color-mix(in srgb,var(--link) 11%,var(--surface))}
 
 .release__left{display:flex;flex-direction:column;gap:var(--space-3);min-width:0}
 .release__head{display:flex;align-items:center;gap:var(--space-5);min-width:0;flex-wrap:wrap;row-gap:var(--space-3)}
@@ -491,6 +497,28 @@ details[open] > .surf-more{display:none}
 .upgrade-filter select:hover{border-color:var(--muted)}
 .upgrade-filter__status{flex-basis:100%;margin:0;color:var(--muted);font-size:var(--text-xs);line-height:1.45}
 .upgrade-filter__status[hidden]{display:none}
+.upgrade-context{
+  display:flex;align-items:center;gap:var(--space-3);flex-wrap:wrap;width:fit-content;
+  margin-top:2px;padding:2px var(--space-4);border-radius:var(--radius-pill);
+  border:1px solid var(--border-soft);font-size:var(--text-xs);line-height:1.45;color:var(--muted);
+  background:color-mix(in srgb,var(--text) 3%,transparent);
+}
+.upgrade-context__label{font-weight:700;color:var(--text)}
+.upgrade-context--current{
+  color:var(--link);
+  background:color-mix(in srgb,var(--link) 9%,transparent);
+  border-color:color-mix(in srgb,var(--link) 30%,transparent);
+}
+.upgrade-context--ok{
+  color:color-mix(in srgb,var(--ok) 72%,var(--text));
+  background:color-mix(in srgb,var(--ok) 9%,transparent);
+  border-color:color-mix(in srgb,var(--ok) 28%,transparent);
+}
+.upgrade-context--warn{
+  color:color-mix(in srgb,var(--warn) 70%,var(--text));
+  background:color-mix(in srgb,var(--warn) 10%,transparent);
+  border-color:color-mix(in srgb,var(--warn) 30%,transparent);
+}
 .upgrade-path{margin-top:var(--space-7)}
 .upgrade-path__title{font-size:var(--text-xs);font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);margin-bottom:var(--space-3)}
 .upgrade-path__verdict{font-size:var(--text-base);font-weight:600;color:var(--text);line-height:1.5;margin-bottom:var(--space-3)}
@@ -521,9 +549,30 @@ details[open] > .surf-more{display:none}
 .cve-badge--affected{ color:var(--danger) }
 .release__right{
   display:flex;align-items:center;gap:var(--space-4);flex-shrink:0;
+  min-width:0;
 }
-.score-stack{display:flex;flex-direction:column;align-items:flex-end;gap:2px}
-.score-sub{font-size:var(--text-xs);color:var(--muted);white-space:nowrap}
+.score-stack{
+  display:flex;flex-direction:column;align-items:flex-end;gap:var(--space-2);
+  min-width:0;max-width:min(38vw,430px);
+}
+.score-sub{
+  display:flex;align-items:center;justify-content:flex-end;gap:var(--space-3);
+  flex-wrap:wrap;
+  font-size:.8125rem;line-height:1.35;color:var(--muted);
+}
+.score-sub__item{
+  position:relative;white-space:nowrap;
+}
+.score-sub__item + .score-sub__item::before{
+  content:'·';
+  margin-right:var(--space-3);
+  color:color-mix(in srgb,var(--muted) 58%,transparent);
+}
+.score-sub__item--verdict{
+  color:var(--score-color,var(--muted));font-weight:600;
+}
+.score-sub__label{color:color-mix(in srgb,var(--muted) 78%,var(--text))}
+.score-sub__value{color:var(--muted);font-variant-numeric:tabular-nums}
 .score-dot{
   width:10px;height:10px;border-radius:50%;flex-shrink:0;
   background:var(--score-color,var(--muted));
@@ -533,8 +582,18 @@ details[open] > .surf-more{display:none}
   font-size:var(--text-base);color:var(--score-color,var(--muted));
   white-space:nowrap;
 }
+.baseline-marker{
+  color:var(--link);
+  font-size:var(--text-xs);
+  font-weight:700;
+  white-space:nowrap;
+}
 @media(max-width:480px){
   .release__date{display:none}
+  .release__right{gap:var(--space-3)}
+  .score-stack{max-width:44vw}
+  .score-sub{gap:var(--space-2)}
+  .score-sub__item + .score-sub__item::before{margin-right:var(--space-2)}
 }
 
 /* ── chevron ──────────────────────────────────────────────────────────── */
@@ -604,6 +663,17 @@ details[open] > .surf-more{display:none}
 .update-cmd__copy.is-copied{
   color:var(--ok);
   background:color-mix(in srgb,var(--ok) 12%,var(--surface));
+}
+.agent-prompt{
+  margin-top:var(--space-7);
+}
+.agent-prompt .update-cmd__code{
+  white-space:normal;
+  word-break:normal;
+  font-family:inherit;
+  font-size:var(--text-sm);
+  color:var(--muted);
+  user-select:text;
 }
 
 .evidence{
@@ -771,9 +841,15 @@ footer a:hover{color:var(--text)}
           <summary class="help-button" title="Explain the score" aria-label="Explain the score">?</summary>
           <div class="score-explain">
             <div class="score-explain__title">What this score means</div>
-            <p><strong>Global score</strong> estimates whether this stable release is broadly safe to install. It combines hard gates such as known CVEs, wait/hotfix status, release age, beta shake-out, breaking changes, and the balance of serious issues opened vs fixed during the release window.</p>
-            <p><strong>My install</strong> appears after you select a meaningful profile. It keeps global/core issues, keeps issues for your selected surfaces, and filters out unrelated surfaced issues so the trend reflects your setup instead of everyone else's.</p>
-            <p>The score is a triage aid, not a guarantee. Expand a release to see the evidence issues behind the number.</p>
+            <p><strong>Global score</strong> asks: “would I install this stable release today?” It starts around 6/10, then gates or moves the score with release and issue evidence.</p>
+            <ul class="score-formula">
+              <li><strong>Hard gates:</strong> known CVEs, emergency hotfixes, and too-new releases can override the score.</li>
+              <li><strong>Release confidence:</strong> longer survival as current stable and more beta bake time lift confidence.</li>
+              <li><strong>Issue response:</strong> serious visible issues opened during the release window pull down; serious issues closed before the next stable help.</li>
+              <li><strong>Adoption cost:</strong> breaking changes and security exposure pull down.</li>
+            </ul>
+            <p><strong>My install</strong> can tilt the global score after you pick your OS, chat channels, and AI providers. With a complete profile and no current version selected, the recommended row becomes the best eligible release for that profile.</p>
+            <p><strong>I’m on</strong> turns newer rows into upgrade-fit scores. The big number answers whether moving from your selected version is worth it. Bad current versions create upgrade pressure, fixed issues help, new/unclear issues and large jumps add caution, and carried risks are shown as context rather than counted as new upgrade risk.</p>
           </div>
         </details>
       </div>
@@ -868,9 +944,30 @@ function scoreColor10(s) {
   return 'var(--danger)';
 }
 
+function clampNumber(value, min, max) {
+  return Math.max(min, Math.min(max, value));
+}
+
+function pressureCount(count) {
+  return Math.log2(Math.max(0, Number(count) || 0) + 1);
+}
+
+function compactCount(count) {
+  const n = Math.max(0, Number(count) || 0);
+  return String(n);
+}
+
+function compactIssuePhrase(count, singular, plural) {
+  const n = Math.max(0, Number(count) || 0);
+  if (n === 0) return `no ${plural}`;
+  if (n === 1) return `1 ${singular}`;
+  return `${compactCount(n)} ${plural}`;
+}
+
 const SCORE_CHART_MAX = 10;
 const SCORE_HISTORY_LIMIT = 20;
 const UPGRADE_PATH_RETRY_MS = 30_000;
+const GENERAL_RECOMMENDATION_SCORE_MARGIN = 1.0;
 const INSTALL_PROFILE_STORAGE_KEY = 'openclaw-release-radar.installProfile.v1';
 const CURRENT_VERSION_STORAGE_KEY = 'openclaw-release-radar.currentVersion.v1';
 // Local taxonomy data for the install-profile selector. Keep this data-shaped so a
@@ -1062,7 +1159,7 @@ function renderCurrentVersionSelector(rows) {
   const text = !selectedCurrentTag
     ? ''
     : newerCount
-      ? 'Open a newer release below to see what the upgrade changes for you.'
+      ? 'Open a newer release below to see what the upgrade changes for you. Evidence is best available, not exhaustive.'
       : "You're on the newest release — nothing to upgrade to.";
   status.hidden = !text;
   status.textContent = text;
@@ -1304,13 +1401,13 @@ function collapsedSurfaceGroup(label, surfaces) {
 function affectedAreasHtml(surfaces) {
   if (!surfaces.length) return '';
   if (!selectedProfileSurfaces.size) {
-    return `<div class="surfaces" title="Reported affected areas this version introduced or still has open">`
-      + surfaceGroup('Reported affected areas:', surfaces)
+    return `<div class="surfaces" title="Relevant watch areas this version introduced or still has open">`
+      + surfaceGroup('Relevant watch areas:', surfaces)
       + `</div>`;
   }
   const relevant = surfaces.filter((s) => selectedProfileSurfaces.has(normalizeSurfaceLabel(s.label)));
   const other = surfaces.filter((s) => !selectedProfileSurfaces.has(normalizeSurfaceLabel(s.label)));
-  return `<div class="surfaces" title="Reported affected areas split by your install profile">`
+  return `<div class="surfaces" title="Relevant watch areas split by your install profile">`
     + surfaceGroup('Relevant watch areas:', relevant)
     + collapsedSurfaceGroup('Show other reported areas', other)
     + `</div>`;
@@ -1385,7 +1482,7 @@ function installProfileStatusText() {
   if (selectedProfileSurfaces.size === 0) return '';
   const missing = missingInstallProfileRequirements();
   if (!missing.length) return 'My install score is active. Issue evidence and trend are filtered for this profile.';
-  return `Filtering issue evidence only. Select ${missing.join(' + ')} to calculate a My install score.`;
+  return `Filtering issue evidence only. Select ${missing.join(' + ')} to calculate My install and upgrade-fit scores.`;
 }
 
 function renderInstallProfileStatus() {
@@ -1431,13 +1528,125 @@ function myInstallScore(r) {
   return Math.round(score * 10) / 10;
 }
 
+function hasAffectedAdvisory(r) {
+  return Number(r?.advisories?.affected?.total ?? 0) > 0;
+}
+
+function upgradeScoreInfo(r) {
+  const current = releaseByTag(selectedCurrentTag);
+  if (!current || r.tag === current.tag || !isNewerThan(r, current)) return null;
+  if (r.finalScore == null) return null;
+  if (selectedProfileSurfaces.size > 0 && !hasMeaningfulInstallProfile()) return null;
+
+  const buckets = upgradePathBuckets(r);
+  if (buckets.state !== 'ready') return null;
+
+  const newRiskCount = bucketCount(buckets, 'newRisks');
+  const fixedCount = bucketCount(buckets, 'fixedByUpgrade');
+  const possibleCount = bucketCount(buckets, 'possibleFixes');
+  const unclearCount = bucketCount(buckets, 'unclear');
+  const currentScore = Number(current.finalScore);
+  const targetScore = Number(r.finalScore);
+  const targetCveGated = r.status === 'skip-cve' || hasAffectedAdvisory(r);
+  const sourceCveGated = current.status === 'skip-cve' || hasAffectedAdvisory(current);
+  const targetHardGated = targetCveGated || r.status === 'skip-hotfix';
+  const sourceHardGated = sourceCveGated || current.status === 'skip-hotfix';
+
+  let rawScore;
+  if (targetHardGated) {
+    rawScore = Math.min(targetScore, 3.9);
+  } else if (r.status === 'wait') {
+    rawScore = sourceHardGated ? 5.2 : 4.4;
+  } else {
+    const sourcePressure = sourceHardGated
+      ? (sourceCveGated ? 2.5 : 1.8)
+      : Number.isFinite(currentScore)
+        ? clampNumber((6 - currentScore) * 0.45, 0, 1.5)
+        : 0.6;
+    const targetFitness = clampNumber((targetScore - 5.5) * 0.55, -1.5, 2.0);
+    // Issue attribution can be very noisy at repo scale. Use logarithmic pressure
+    // units so hundreds of broadly-attributed rows don't dominate the upgrade fit.
+    const pathBenefit = bucketRiskUnits(buckets, 'fixedByUpgrade') + bucketRiskUnits(buckets, 'possibleFixes') * 0.4;
+    const pathRisk = bucketRiskUnits(buckets, 'newRisks') + bucketRiskUnits(buckets, 'unclear') * 0.5;
+    const impact = clampNumber(Math.log2((pathBenefit + 1) / (pathRisk + 1)) * 0.35, -0.8, 0.8);
+    const transitionPressure = pathBenefit + pathRisk;
+    const transitionPenalty = Math.min(0.45, Math.log2(1 + transitionPressure / 8) * 0.25);
+    const evidencePenalty = buckets.evidenceLimited ? 0.4 : 0;
+    rawScore = 5 + sourcePressure + targetFitness + impact - transitionPenalty - evidencePenalty;
+  }
+
+  const score = Math.round(clampNumber(rawScore, 0, 10) * 10) / 10;
+  const verdict = score >= 7.2 ? 'strong'
+    : score >= 5.8 ? 'checks'
+      : score >= 4.2 ? 'wait'
+        : 'avoid';
+  const verdictLabel = upgradeVerdictLabel(verdict);
+  const targetLabel = formatScore10(r.finalScore) ?? '—';
+  const currentLabel = formatScore10(current.finalScore) ?? '—';
+  const subParts = [
+    { kind: 'verdict', text: upgradeVerdictActionLabel(verdict) },
+  ];
+  return {
+    main: {
+      color: scoreColor10(score),
+      label: `Upgrade fit ${formatScore10(score) ?? '—'}: ${verdictLabel}; target global ${targetLabel}; current global ${currentLabel}`,
+      num: formatScore10(score) ?? '—',
+    },
+    sub: subParts.map((part) => part.text).filter(Boolean).join('; '),
+    subParts,
+  };
+}
+
+function upgradeVerdictActionLabel(verdict) {
+  return {
+    strong: 'worth upgrading',
+    checks: 'check first',
+    wait: 'wait',
+    avoid: 'avoid',
+  }[verdict] ?? upgradeVerdictLabel(verdict);
+}
+
+function upgradeVerdictLabel(verdict) {
+  return {
+    strong: 'strong',
+    checks: 'check first',
+    wait: 'wait',
+    avoid: 'avoid',
+  }[verdict] ?? verdict;
+}
+
 function displayScoreInfo(r) {
+  if (selectedCurrentTag && r.tag === selectedCurrentTag) {
+    return {
+      main: { color: 'var(--link)', label: 'Selected current version', num: '' },
+      isCurrentBaseline: true,
+    };
+  }
+  const upgrade = upgradeScoreInfo(r);
+  if (upgrade) return upgrade;
   const mine = myInstallScore(r);
   if (mine == null) return { main: scoreInfo(r), sub: '' };
   return {
     main: { color: scoreColor10(mine), label: 'My install', num: formatScore10(mine) ?? '—' },
     sub: `global ${formatScore10(r.finalScore) ?? '—'}`,
+    subParts: [{ label: 'global', value: formatScore10(r.finalScore) ?? '—' }],
   };
+}
+
+function scoreSubHtml(si) {
+  if (Array.isArray(si.subParts) && si.subParts.length) {
+    const parts = si.subParts.map((part) => {
+      const cls = part.kind === 'verdict'
+        ? 'score-sub__item score-sub__item--verdict'
+        : 'score-sub__item';
+      if (part.label) {
+        return `<span class="${cls}"><span class="score-sub__label">${esc(part.label)}</span> <span class="score-sub__value">${esc(part.value ?? '')}</span></span>`;
+      }
+      return `<span class="${cls}">${esc(part.text ?? '')}</span>`;
+    }).join('');
+    return `<span class="score-sub" aria-label="${esc(si.sub ?? '')}">${parts}</span>`;
+  }
+  return si.sub ? `<span class="score-sub">${esc(si.sub)}</span>` : '';
 }
 
 function releaseForChartPoint(r) {
@@ -1699,14 +1908,14 @@ function selectedWatchAreaSummaryHtml(r) {
 function issueRowsHtml(issues, visibleCount = 8) {
   return issues.map((issue, idx) => issueRowHtml(issue, idx >= visibleCount)).join('')
     + (issues.length > visibleCount
-      ? '<li class="evidence__item"><button type="button" class="evidence__more" data-expanded="false" data-collapsed-label="Show all ' + esc(issues.length) + ' related issues">Show all ' + esc(issues.length) + ' related issues</button></li>'
+      ? '<li class="evidence__item"><button type="button" class="evidence__more" data-expanded="false" data-collapsed-label="Show all ' + esc(issues.length) + ' relevant issues">Show all ' + esc(issues.length) + ' relevant issues</button></li>'
       : '');
 }
 
 function issueEvidenceHtml(r) {
   const detail = publicReleaseDetails.get(r.tag);
   const selected = selectedProfileSurfaces;
-  const title = selected.size ? 'Related issues for selected areas' : 'Related issues';
+  const title = selected.size ? 'Relevant issues for selected areas' : 'Relevant issues';
   const issues = evidenceIssuesForRelease(detail);
   if (selected.size && !issues.length) {
     return evidenceSectionHtml(title, selectedWatchAreaSummaryHtml(r));
@@ -1776,13 +1985,29 @@ function bucketCount(buckets, name) {
   return buckets.counts?.[name] ?? buckets[name]?.length ?? 0;
 }
 
-function classifiedCoverageRatio(state) {
-  if (state?.classified == null || state?.raw == null) return null;
-  return `${state.classified}/${state.raw}`;
+function bucketQualityCount(buckets, name, key) {
+  const value = buckets.quality?.[name]?.[key] ?? buckets[name]?.quality?.[key];
+  return Number(value ?? 0) || 0;
 }
 
-function hasIncompleteClassificationCoverage(state) {
-  return state?.classified != null && state?.raw != null && state.classified < state.raw;
+function bucketRiskUnits(buckets, name) {
+  const units = bucketQualityCount(buckets, name, 'riskUnits');
+  return units > 0 ? units : pressureCount(bucketCount(buckets, name));
+}
+
+function riskQualitySummary(buckets) {
+  const hasQuality = Boolean(buckets.quality?.newRisks || buckets.quality?.stillPresent
+    || buckets.newRisks?.quality || buckets.stillPresent?.quality);
+  if (!hasQuality) {
+    return {
+      confirmed: 0,
+      unverified: bucketCount(buckets, 'newRisks'),
+    };
+  }
+  return {
+    confirmed: bucketQualityCount(buckets, 'newRisks', 'confirmed'),
+    unverified: bucketQualityCount(buckets, 'newRisks', 'unverified'),
+  };
 }
 
 function anyServerBucketCapped(data) {
@@ -1814,6 +2039,13 @@ function bucketsFromServerUpgrade(data, target, current) {
       fixedByUpgrade: Number(data.buckets?.fixedByUpgrade?.total ?? 0),
       possibleFixes: Number(data.buckets?.possibleFixes?.total ?? 0),
       unclear: Number(data.buckets?.unclear?.total ?? 0),
+    },
+    quality: {
+      newRisks: data.buckets?.newRisks?.quality ?? null,
+      stillPresent: data.buckets?.stillPresent?.quality ?? null,
+      fixedByUpgrade: data.buckets?.fixedByUpgrade?.quality ?? null,
+      possibleFixes: data.buckets?.possibleFixes?.quality ?? null,
+      unclear: data.buckets?.unclear?.quality ?? null,
     },
     evidenceLimited: Boolean(data.evidenceLimited),
     evidenceCapped: anyServerBucketCapped(data),
@@ -1919,68 +2151,76 @@ function upgradePathSummaryText(buckets, target) {
   if (buckets.state === 'not-newer') return `Selected current version is newer than ${target.tag}; upgrade-path evidence is only shown for newer targets.`;
   if (buckets.state === 'unclear-dates') return 'Release dates are incomplete, so this upgrade path cannot be classified confidently.';
   if (buckets.source === 'raw-unclassified-attribution') {
-    const newRiskCount = bucketCount(buckets, 'newRisks');
+    const riskQuality = riskQualitySummary(buckets);
     const fixedCount = bucketCount(buckets, 'fixedByUpgrade');
     const possibleCount = bucketCount(buckets, 'possibleFixes');
-    const stillCount = bucketCount(buckets, 'stillPresent');
     const parts = [
-      `${newRiskCount} raw ${newRiskCount === 1 ? 'new risk' : 'new risks'}`,
-      `${fixedCount} closed before target publish`,
+      compactIssuePhrase(riskQuality.confirmed, 'confirmed risk', 'confirmed risks'),
+      compactIssuePhrase(riskQuality.unverified, 'unverified report', 'unverified reports'),
+      `${compactCount(fixedCount)} closed before target publish`,
     ];
-    if (possibleCount) parts.push(`${possibleCount} possible ${possibleCount === 1 ? 'fix' : 'fixes'} need dates`);
-    parts.push(`${stillCount} still present`);
-    return `From ${buckets.current.tag} to ${target.tag}: ${parts.join(' · ')}. Classifications are incomplete, so this is limited raw triage evidence.`;
+    if (possibleCount) parts.push(`${compactIssuePhrase(possibleCount, 'possible fix', 'possible fixes')} need dates`);
+    return `From ${buckets.current.tag} to ${target.tag}: ${parts.join(' · ')}.`;
   }
   if (buckets.evidenceLimited) {
-    const missing = [];
-    if (!buckets.currentDetailState.hasDetail) missing.push(buckets.current.tag);
-    if (!buckets.targetDetailState.hasDetail) missing.push(target.tag);
-    if (!missing.length && buckets.source === 'server-classified-attribution') {
-      const currentCoverage = classifiedCoverageRatio(buckets.currentDetailState);
-      const targetCoverage = classifiedCoverageRatio(buckets.targetDetailState);
-      const parts = [];
-      if (hasIncompleteClassificationCoverage(buckets.currentDetailState) && currentCoverage) parts.push(`current ${currentCoverage} classified/raw`);
-      if (hasIncompleteClassificationCoverage(buckets.targetDetailState) && targetCoverage) parts.push(`target ${targetCoverage} classified/raw`);
-      const coverage = parts.length ? ` (${parts.join(', ')})` : '';
-      return `From ${buckets.current.tag} to ${target.tag}: classification coverage is incomplete${coverage}, so empty buckets are not proof of no risk.`;
-    }
-    if (!missing.length) {
-      return `From ${buckets.current.tag} to ${target.tag}: issue-detail evidence is limited, so empty buckets are not proof of no risk.`;
-    }
-    return `From ${buckets.current.tag} to ${target.tag}: issue-detail evidence is limited for ${missing.join(' and ')}, so empty buckets are not proof of no risk.`;
+    const riskQuality = riskQualitySummary(buckets);
+    const fixedCount = bucketCount(buckets, 'fixedByUpgrade');
+    const possibleCount = bucketCount(buckets, 'possibleFixes');
+    const parts = [];
+    parts.push(compactIssuePhrase(riskQuality.confirmed, 'confirmed risk', 'confirmed risks'));
+    parts.push(compactIssuePhrase(riskQuality.unverified, 'unverified report', 'unverified reports'));
+    parts.push(`${compactCount(fixedCount)} closed before target publish`);
+    if (possibleCount) parts.push(`${compactIssuePhrase(possibleCount, 'possible fix', 'possible fixes')} need dates`);
+    return `From ${buckets.current.tag} to ${target.tag}: ${parts.join(' · ')}.`;
   }
   const parts = [];
-  const newRiskCount = bucketCount(buckets, 'newRisks');
+  const riskQuality = riskQualitySummary(buckets);
   const fixedCount = bucketCount(buckets, 'fixedByUpgrade');
   const possibleCount = bucketCount(buckets, 'possibleFixes');
-  const stillCount = bucketCount(buckets, 'stillPresent');
-  parts.push(`${newRiskCount} newly seen target-evidence ${newRiskCount === 1 ? 'risk' : 'risks'}`);
-  parts.push(`${fixedCount} closed before target publish`);
-  if (possibleCount) parts.push(`${possibleCount} possible ${possibleCount === 1 ? 'fix' : 'fixes'} need dates`);
-  parts.push(`${stillCount} still present`);
-  const capNote = buckets.evidenceCapped
-    ? (buckets.source === 'server-classified-attribution'
-      ? ' Showing top issue rows per bucket; counts use all classified attribution rows.'
-      : ' Capped issue-detail samples mean missing rows are not proof of fixes.')
-    : '';
-  return `From ${buckets.current.tag} to ${target.tag}: ${parts.join(' · ')}.${capNote}`;
+  parts.push(compactIssuePhrase(riskQuality.confirmed, 'confirmed risk', 'confirmed risks'));
+  parts.push(compactIssuePhrase(riskQuality.unverified, 'unverified report', 'unverified reports'));
+  parts.push(`${compactCount(fixedCount)} closed before target publish`);
+  if (possibleCount) parts.push(`${compactIssuePhrase(possibleCount, 'possible fix', 'possible fixes')} need dates`);
+  return `From ${buckets.current.tag} to ${target.tag}: ${parts.join(' · ')}.`;
 }
 
-function upgradeCoverageRows(buckets) {
-  if (buckets.source === 'server-classified-attribution') {
-    const cur = buckets.currentDetailState;
-    const tgt = buckets.targetDetailState;
-    return `<li class="evidence__item"><span class="evidence__meta">Current version: ${esc(cur.issueCount)} classified issue matches (${esc(cur.classified ?? cur.issueCount)} classified / ${esc(cur.raw ?? cur.total)} raw).</span></li>`
-      + `<li class="evidence__item"><span class="evidence__meta">Target version: ${esc(tgt.issueCount)} classified issue matches (${esc(tgt.classified ?? tgt.issueCount)} classified / ${esc(tgt.raw ?? tgt.total)} raw).</span></li>`;
+function upgradeContextTone(target, buckets) {
+  const upgrade = upgradeScoreInfo(target);
+  const score = Number(upgrade?.main?.num);
+  if (Number.isFinite(score)) {
+    if (score >= 7.2) return 'ok';
+    if (score < 5.8) return 'warn';
+    return 'neutral';
   }
-  if (buckets.source === 'raw-unclassified-attribution') {
-    const cur = buckets.currentDetailState;
-    const tgt = buckets.targetDetailState;
-    return `<li class="evidence__item"><span class="evidence__meta">Current version: showing ${esc(cur.issueCount)} raw issue matches from ${esc(cur.raw ?? cur.total)} total; ${esc(cur.classified ?? 0)} have classifications.</span></li>`
-      + `<li class="evidence__item"><span class="evidence__meta">Target version: showing ${esc(tgt.issueCount)} raw issue matches from ${esc(tgt.raw ?? tgt.total)} total; ${esc(tgt.classified ?? 0)} have classifications.</span></li>`;
+  const newRiskUnits = bucketRiskUnits(buckets, 'newRisks') + bucketRiskUnits(buckets, 'unclear') * 0.5;
+  const fixedUnits = bucketRiskUnits(buckets, 'fixedByUpgrade') + bucketRiskUnits(buckets, 'possibleFixes') * 0.4;
+  if (newRiskUnits > fixedUnits * 1.2 && newRiskUnits >= 2) return 'warn';
+  if (fixedUnits > newRiskUnits * 1.2 && fixedUnits >= 2) return 'ok';
+  return 'neutral';
+}
+
+function upgradeContextHtml(target) {
+  const current = releaseByTag(selectedCurrentTag);
+  if (!current) return '';
+  if (target.tag === current.tag) {
+    return `<div class="upgrade-context upgrade-context--current"><span class="upgrade-context__label">Your current version</span></div>`;
   }
-  return `<li class="evidence__item"><span class="evidence__meta">Current version detail rows: ${esc(buckets.currentDetailState.issueCount)}${buckets.currentDetailState.total != null ? ` of ${esc(buckets.currentDetailState.total)} attributed` : ''}</span></li>`
-    + `<li class="evidence__item"><span class="evidence__meta">Target version detail rows: ${esc(buckets.targetDetailState.issueCount)}${buckets.targetDetailState.total != null ? ` of ${esc(buckets.targetDetailState.total)} attributed` : ''}</span></li>`;
+  if (!isNewerThan(target, current)) return '';
+
+  const buckets = upgradePathBuckets(target);
+  if (buckets.state !== 'ready') {
+    return `<div class="upgrade-context"><span class="upgrade-context__label">From ${esc(current.tag)}</span><span>checking upgrade evidence…</span></div>`;
+  }
+
+  const riskQuality = riskQualitySummary(buckets);
+  const fixedCount = bucketCount(buckets, 'fixedByUpgrade');
+  const tone = upgradeContextTone(target, buckets);
+  return `<div class="upgrade-context upgrade-context--${tone}" title="${esc(`Compared with ${current.tag}`)}">`
+    + `<span class="upgrade-context__label">From ${esc(current.tag)}</span>`
+    + `<span>${esc(compactIssuePhrase(riskQuality.confirmed, 'confirmed risk', 'confirmed risks'))}</span>`
+    + `<span>${esc(compactIssuePhrase(riskQuality.unverified, 'unverified report', 'unverified reports'))}</span>`
+    + `<span>${esc(compactCount(fixedCount))} fixed</span>`
+    + `</div>`;
 }
 
 function upgradeSection(title, issues, emptyText, note = '') {
@@ -2026,85 +2266,129 @@ function upgradeVerdict(buckets) {
   return `${lead} — serious new risks for your setup: ${names.join('; ')}.`;
 }
 
+function promptSignalLines(target, buckets) {
+  const signals = target.maintainerSignals ?? {};
+  const riskQuality = riskQualitySummary(buckets);
+  const lines = [
+    `- Confirmed risks: ${riskQuality.confirmed}`,
+    `- Unverified reports: ${riskQuality.unverified}`,
+    `- Newly seen target-evidence risk rows after filtering: ${bucketCount(buckets, 'newRisks')}`,
+    `- Closed before target publish: ${bucketCount(buckets, 'fixedByUpgrade')}`,
+    `- Possible fixes needing dates: ${bucketCount(buckets, 'possibleFixes')}`,
+    `- Unclear timing rows: ${bucketCount(buckets, 'unclear')}`,
+  ];
+  const fixes = Number(signals.fixesCount ?? 0);
+  const highlights = Number(signals.highlightsCount ?? 0);
+  const changes = Number(signals.changesCount ?? 0);
+  const prs = Number(signals.prRefsCount ?? 0);
+  const betas = Number(signals.betaCount ?? 0);
+  if (fixes) lines.push(`- Maintainer release notes mention ${fixes} fix ${fixes === 1 ? 'signal' : 'signals'}.`);
+  if (highlights) lines.push(`- Maintainer release notes mention ${highlights} highlight ${highlights === 1 ? 'signal' : 'signals'}.`);
+  if (changes) lines.push(`- Maintainer release notes mention ${changes} change ${changes === 1 ? 'signal' : 'signals'}.`);
+  if (prs) lines.push(`- Release notes reference ${prs} PR ${prs === 1 ? 'link' : 'links'} worth scanning for upside and migration notes.`);
+  if (betas) lines.push(`- This target had ${betas} beta ${betas === 1 ? 'build' : 'builds'} before stable.`);
+  return lines;
+}
+
+function upgradeReviewPrompt(target) {
+  const current = releaseByTag(selectedCurrentTag);
+  if (!current || target.tag === current.tag || !isNewerThan(target, current)) return '';
+  const buckets = upgradePathBuckets(target);
+  if (buckets.state !== 'ready') return '';
+
+  const upgrade = upgradeScoreInfo(target);
+  const currentScore = formatScore10(current.finalScore);
+  const targetScore = formatScore10(target.finalScore);
+  const lines = [
+    'You are my OpenClaw update-check agent.',
+    'I am coming from a working system, so balance upgrade risk against upgrade opportunity. Inspect the local machine yourself; do not rely on this prompt for local configuration.',
+    '',
+    `Assess whether I should upgrade from ${current.tag} to ${target.tag}.`,
+    `Current release global score: ${currentScore ?? 'unknown'} (${current.status || 'unknown'}).`,
+    `Target release global score: ${targetScore ?? 'unknown'} (${target.status || 'unknown'}).`,
+  ];
+  if (upgrade) lines.push(`Upgrade-fit score shown by the release radar: ${upgrade.main.num}/10 (${upgrade.sub}).`);
+  lines.push(
+    '',
+    'Radar signals to treat as hints, not a final answer:',
+    ...promptSignalLines(target, buckets),
+    '',
+    'Inspect these yourself before recommending:',
+    '- current OpenClaw version and package/plugin versions',
+    '- actual enabled channels, providers, models, plugins, MCP servers, and runtime mode',
+    '- release notes, changelog entries, linked PRs, GitHub issues, and advisories between the two tags',
+    '- whether fixed issues touch my real usage and whether new risks are relevant to my setup',
+    '- recent gateway errors, failed sessions, cron failures, auth/config warnings, and local health checks',
+    '- backup/rescue state and rollback path',
+    '',
+    'Return one recommendation: upgrade now, upgrade with checks, wait, or do not upgrade.',
+    'Include the upside I gain, the risks I should watch, exact preflight checks, smoke tests after upgrade, and rollback steps.',
+    'Ask before destructive changes, public actions, credential changes, or gateway/config mutations.',
+  );
+  return lines.join('\n');
+}
+
+function agentPromptBlockHtml(r) {
+  const prompt = upgradeReviewPrompt(r);
+  if (!prompt) return '';
+  const label = releaseByTag(selectedCurrentTag)?.tag
+    ? `Copy a local-agent review prompt for ${releaseByTag(selectedCurrentTag).tag} -> ${r.tag}`
+    : 'Copy a local-agent review prompt';
+  return `<div class="update-cmd agent-prompt">`
+    + `<span class="update-cmd__label">Agent update-check prompt</span>`
+    + `<div class="update-cmd__row">`
+    + `<code class="update-cmd__code">${esc(label)}</code>`
+    + `<button type="button" class="update-cmd__copy" data-prompt="${esc(encodeURIComponent(prompt))}">Copy prompt</button>`
+    + `</div></div>`;
+}
+
 function upgradePathHtml(target) {
   const buckets = upgradePathBuckets(target);
   const summary = upgradePathSummaryText(buckets, target);
   if (!summary) return '';
 
   const title = `<div class="upgrade-path__title">Upgrade path</div>`;
-
-  // Non-ready states (same / not-newer / unclear) are just a short status line —
-  // nothing to collapse.
   if (buckets.state !== 'ready') {
     return `<div class="upgrade-path">${title}<div class="upgrade-path__summary">${esc(summary)}</div></div>`;
   }
 
-  // Ready: keep only the human verdict visible; fold the technical summary,
-  // evidence coverage and full issue lists behind one "Show upgrade details" click.
   const verdict = upgradeVerdict(buckets);
   let body = `<div class="upgrade-path__summary">${esc(summary)}</div>`;
-  {
-    if (buckets.evidenceLimited) {
-      body += evidenceSectionHtml(
-        'Evidence coverage',
-        upgradeCoverageRows(buckets),
-        buckets.source === 'server-classified-attribution'
-          ? 'Raw issue rows exist without matching classifications, so empty or missing buckets are not meaningful yet.'
-          : buckets.source === 'raw-unclassified-attribution'
-            ? 'Raw issue rows are bucketed by timing with title/label surface hints. Treat them as triage evidence until classifications refresh.'
-            : 'Refresh/deploy richer public issue detail before treating empty upgrade buckets as meaningful.',
-      );
-    } else if (buckets.source === 'server-classified-attribution') {
-      body += evidenceSectionHtml(
-        'Evidence source',
-        upgradeCoverageRows(buckets),
-        buckets.evidenceCapped && buckets.itemLimit
-          ? `Counts use all classified comparison rows; each bucket shows up to ${buckets.itemLimit} issue rows.`
-          : 'Counts and issue rows come from the dedicated upgrade-path comparison endpoint with complete classification coverage.',
-      );
-    } else if (buckets.evidenceCapped) {
-      body += evidenceSectionHtml(
-        'Evidence coverage',
-        `<li class="evidence__item"><span class="evidence__meta">Current version detail rows: ${esc(buckets.currentDetailState.issueCount)} of ${esc(buckets.currentDetailState.total)}</span></li>`
-          + `<li class="evidence__item"><span class="evidence__meta">Target version detail rows: ${esc(buckets.targetDetailState.issueCount)} of ${esc(buckets.targetDetailState.total)}</span></li>`,
-        'This is enough to compare visible top issues, but missing rows are not proof that a target release fixed them.',
-      );
-    }
+  body += upgradeSection(
+    'Risks newly seen in target evidence',
+    buckets.newRisks,
+    'No new relevant/general negative issues found in the available evidence.',
+    'These affect the target but were not seen in your selected current version.',
+  );
+  body += upgradeSection(
+    'Fixed',
+    buckets.fixedByUpgrade,
+    'No fixed issues found in the available evidence.',
+    'These affected your selected current version and were closed before the target was published.',
+  );
+  if (buckets.possibleFixes.length) {
     body += upgradeSection(
-      'Risks newly seen in target evidence',
-      buckets.newRisks,
-      'No new relevant/general negative issues found in the available evidence.',
-      'These affect the target but were not seen in your selected current version.',
+      'Possible fixes needing timing evidence',
+      buckets.possibleFixes,
+      'No possible fixes needing timing evidence.',
+      'These current-version issues are closed and absent from the target detail sample, but need closedAt timing before counting as fixed.',
     );
-    body += upgradeSection(
-      'Fixed',
-      buckets.fixedByUpgrade,
-      'No fixed issues found in the available evidence.',
-      'These affected your selected current version and were closed before the target was published.',
-    );
-    if (buckets.possibleFixes.length) {
-      body += upgradeSection(
-        'Possible fixes needing timing evidence',
-        buckets.possibleFixes,
-        'No possible fixes needing timing evidence.',
-        'These current-version issues are closed and absent from the target detail sample, but the sample is capped or lacks closedAt timing.',
-      );
-    }
-    body += upgradeSection(
-      'Known risks still present',
-      buckets.stillPresent,
-      'No already-exposed relevant/general issues found in the target evidence.',
-      'These are not new upgrade risks, but upgrading does not appear to fix them.',
-    );
-    if (buckets.unclear.length) {
-      body += upgradeSection(
-        'Unclear timing',
-        buckets.unclear,
-        'No unclear-timing issues.',
-        'Available issue dates or payload coverage were not enough to classify these cleanly.',
-      );
-    }
   }
+  body += upgradeSection(
+    'Known risks still present',
+    buckets.stillPresent,
+    'No already-exposed relevant/general issues found in the target evidence.',
+    'These are not new upgrade risks, but upgrading does not appear to fix them.',
+  );
+  if (buckets.unclear.length) {
+    body += upgradeSection(
+      'Unclear timing',
+      buckets.unclear,
+      'No unclear-timing issues.',
+      'Available issue dates were not enough to classify these cleanly.',
+    );
+  }
+
   return `<div class="upgrade-path">`
     + title
     + (verdict ? `<div class="upgrade-path__verdict">${esc(verdict)}</div>` : '')
@@ -2127,15 +2411,63 @@ function installPanelHtml(r) {
   return `<div class="details__inner">`
     + updateCommandBlockHtml(r.tag)
     + upgradePathHtml(r)
+    + agentPromptBlockHtml(r)
     + collapsibleEvidence(advCount === 1 ? 'Show known advisory' : 'Show known advisories', advisoryEvidenceHtml(r))
-    + collapsibleEvidence('Show related issues', issueEvidenceHtml(r))
+    + collapsibleEvidence('Show relevant issues', issueEvidenceHtml(r))
     + `</div>`;
 }
 
+function pickProfileRecommendedRelease(rows) {
+  if (selectedCurrentTag || !hasMeaningfulInstallProfile()) return null;
+  return rows
+    .map((r, index) => ({ release: r, score: myInstallScore(r), index }))
+    .filter(({ release, score }) =>
+      release.status === 'eligible' &&
+      score != null &&
+      !hasAffectedAdvisory(release),
+    )
+    .sort((a, b) => b.score - a.score || a.index - b.index)[0]?.release ?? null;
+}
+
+function pickUpgradeRecommendedRelease(rows) {
+  const current = releaseByTag(selectedCurrentTag);
+  if (!current) return null;
+  return rows
+    .map((r, index) => ({ release: r, upgrade: upgradeScoreInfo(r), index }))
+    .filter(({ release, upgrade }) =>
+      release.tag !== current.tag &&
+      isNewerThan(release, current) &&
+      upgrade?.main?.num != null &&
+      Number(upgrade.main.num) >= 5.8,
+    )
+    .sort((a, b) => Number(b.upgrade.main.num) - Number(a.upgrade.main.num) || a.index - b.index)[0]?.release ?? null;
+}
+
+function isGeneralRecommendationCandidate(r) {
+  return r.status === 'eligible' && r.finalScore != null && !hasAffectedAdvisory(r);
+}
+
+function pickGeneralRecommendedRelease(rows) {
+  const candidates = rows
+    .map((r, index) => ({ release: r, score: Number(r.finalScore), index }))
+    .filter(({ release, score }) => isGeneralRecommendationCandidate(release) && Number.isFinite(score));
+  if (!candidates.length) return rows[0] ?? null;
+
+  const best = [...candidates].sort((a, b) => b.score - a.score || a.index - b.index)[0];
+  const serverPick = candidates.find(({ release }) => release.recommended);
+  if (serverPick && best.score - serverPick.score <= GENERAL_RECOMMENDATION_SCORE_MARGIN) {
+    return serverPick.release;
+  }
+  return best.release;
+}
+
 function pickRecommendedRelease(rows) {
-  return rows.find((r) => r.recommended)
-    ?? rows.find((r) => r.status === 'eligible' && r.finalScore != null)
-    ?? rows[0];
+  const upgradeRecommended = pickUpgradeRecommendedRelease(rows);
+  if (upgradeRecommended) return upgradeRecommended;
+  if (selectedCurrentTag) return null;
+  const profileRecommended = pickProfileRecommendedRelease(rows);
+  if (profileRecommended) return profileRecommended;
+  return pickGeneralRecommendedRelease(rows);
 }
 
 let installCopyBound = false;
@@ -2151,27 +2483,57 @@ function bindInstallCopy() {
       const expanded = more.dataset.expanded === 'true';
       section?.querySelectorAll('[data-extra-issue]').forEach((el) => { el.hidden = expanded; });
       more.dataset.expanded = expanded ? 'false' : 'true';
-      more.textContent = expanded ? (more.dataset.collapsedLabel || 'Show all related issues') : 'Show fewer related issues';
+      more.textContent = expanded ? (more.dataset.collapsedLabel || 'Show all relevant issues') : 'Show fewer relevant issues';
       return;
     }
     const btn = e.target.closest('.update-cmd__copy');
     if (!btn) return;
     e.stopPropagation();
     e.preventDefault();
-    const cmd = btn.dataset.cmd;
-    if (!cmd) return;
+    const prompt = btn.dataset.prompt ? decodeURIComponent(btn.dataset.prompt) : '';
+    const text = prompt || btn.dataset.cmd;
+    if (!text) return;
+    const resetLabel = prompt ? 'Copy prompt' : 'Copy';
+    const copiedLabel = prompt ? 'Prompt copied' : 'Copied';
+    const failedLabel = prompt ? 'Copy unavailable' : 'Copy unavailable';
     const done = () => {
-      btn.textContent = 'Copied';
+      btn.textContent = copiedLabel;
       btn.classList.add('is-copied');
       setTimeout(() => {
-        btn.textContent = 'Copy';
+        btn.textContent = resetLabel;
+        btn.classList.remove('is-copied');
+      }, 1600);
+    };
+    const failed = () => {
+      btn.textContent = failedLabel;
+      btn.classList.add('is-copied');
+      setTimeout(() => {
+        btn.textContent = resetLabel;
         btn.classList.remove('is-copied');
       }, 1600);
     };
     if (navigator.clipboard?.writeText) {
-      navigator.clipboard.writeText(cmd).then(done).catch(() => {});
+      let settled = false;
+      const fallback = setTimeout(() => {
+        if (settled) return;
+        settled = true;
+        done();
+      }, 350);
+      navigator.clipboard.writeText(text)
+        .then(() => {
+          if (settled) return;
+          settled = true;
+          clearTimeout(fallback);
+          done();
+        })
+        .catch(() => {
+          if (settled) return;
+          settled = true;
+          clearTimeout(fallback);
+          failed();
+        });
     } else {
-      done();
+      failed();
     }
   });
 }
@@ -2262,7 +2624,7 @@ function renderPackageCard() {
   }
 
   const latest = allReleases[0];
-  const recommended = pickRecommendedRelease(allReleases);
+  const recommended = pickRecommendedRelease(allReleases) ?? allReleases.find((r) => r.recommended) ?? latest;
   const bestAlt = pickBestAlternative(allReleases, latest);
   const latestScore = formatScore10(latest.finalScore);
   const latestColor = scoreColor10(latest.finalScore);
@@ -2331,9 +2693,10 @@ function renderReleases() {
     const si  = displayScoreInfo(r);
     const id  = cssId(r.tag);
     const cat = byTag.get(r.tag) ?? { category: 'normal', reason: '' };
+    const isSelectedCurrent = selectedCurrentTag && r.tag === selectedCurrentTag;
 
     const row = document.createElement('div');
-    row.className = 'release release--' + cat.category;
+    row.className = 'release release--' + cat.category + (isSelectedCurrent ? ' release--current' : '');
     row.dataset.tag = r.tag;
     row.tabIndex = 0;
     row.setAttribute('role', 'button');
@@ -2349,7 +2712,7 @@ function renderReleases() {
       : '';
 
     const recPill = cat.category === 'recommended'
-      ? '<span class="rec-pill">Recommended</span>' : '';
+      ? `<span class="rec-pill">${selectedCurrentTag ? 'Recommended upgrade' : 'Recommended'}</span>` : '';
     // Eligible + skip-cve rows say everything via the score, recommended pill, CVE
     // badge and the red surface chips — so their verbose reason text is hidden.
     // Only 'wait' (too-new) and 'skip-hotfix' keep a short explanatory note.
@@ -2360,6 +2723,12 @@ function renderReleases() {
 
     const surfaces = issueBackedSurfaces(r);
     const surfacesLine = affectedAreasHtml(surfaces);
+    const upgradeContextLine = upgradeContextHtml(r);
+    const scoreSubLine = scoreSubHtml(si);
+    const scoreBody = si.isCurrentBaseline
+      ? '<span class="baseline-marker">Current baseline</span>'
+      : `<span class="score-dot"></span>`
+        + `<span class="score-stack"><span class="score-num">${esc(si.main.num)}</span>${scoreSubLine}</span>`;
 
     row.innerHTML = `
       <div class="release__left">
@@ -2371,10 +2740,10 @@ function renderReleases() {
         </div>
         ${reasonLine}
         ${surfacesLine}
+        ${upgradeContextLine}
       </div>
       <div class="release__right" title="${esc(si.main.label)}">
-        <span class="score-dot"></span>
-        <span class="score-stack"><span class="score-num">${esc(si.main.num)}</span>${si.sub ? `<span class="score-sub">${esc(si.sub)}</span>` : ''}</span>
+        ${scoreBody}
         <svg class="chevron" viewBox="0 0 16 16" fill="none">
           <path d="M6 3l5 5-5 5" stroke="currentColor" stroke-width="1.5"
                 stroke-linecap="round" stroke-linejoin="round"/>
@@ -2413,12 +2782,17 @@ function renderReleases() {
  *   - 'normal'      : eligible but not the pick — its score speaks for itself
  */
 function categorizeReleases(rows) {
+  const recommended = pickRecommendedRelease(rows);
+  const upgradeMode = Boolean(selectedCurrentTag);
   const out = rows.map((r) => {
     const adv = r.advisories?.affected ?? { total: 0, bySeverity: {} };
     const affectedCves = adv.total ?? 0;
     let category = 'normal';
     let reason = '';
-    if (affectedCves > 0 || r.status === 'skip-cve') {
+    if (recommended?.tag === r.tag) {
+      category = 'recommended';
+      reason = '';
+    } else if (affectedCves > 0 || r.status === 'skip-cve') {
       category = 'skip';
       const sev = ['critical', 'high', 'medium', 'low']
         .filter((s) => (adv.bySeverity?.[s] ?? 0) > 0)
@@ -2430,12 +2804,9 @@ function categorizeReleases(rows) {
     } else if (r.status === 'skip-hotfix') {
       category = 'skip';
       reason = r.reason || 'Maintainers hotfixed it — install the successor';
-    } else if (r.status === 'wait') {
+    } else if (!upgradeMode && r.status === 'wait') {
       category = 'too-new';
       reason = r.reason || 'Too new — wait for it to settle';
-    } else if (r.recommended) {
-      category = 'recommended';
-      reason = '';
     }
     return { release: r, category, reason };
   });
@@ -2449,6 +2820,11 @@ function renderTarget(categorized) {
   const target = categorized.find(c => c.category === 'recommended');
   const targetEl = document.getElementById('recTarget');
   if (target) {
+    targetEl.hidden = true;
+    targetEl.innerHTML = '';
+    return;
+  }
+  if (selectedCurrentTag) {
     targetEl.hidden = true;
     targetEl.innerHTML = '';
     return;

@@ -198,6 +198,8 @@ api.get('/releases/history', (_req, res) => {
 // severity, then positives.
 const PUBLIC_ISSUES_PER_RELEASE = 25;
 const UPGRADE_PATH_ITEMS_PER_BUCKET = 25;
+const ISSUE_FULL_WEIGHT_DAYS = 7;
+const ISSUE_DECAY_ZERO_DAYS = 21;
 const SEVERITY_RANK: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 };
 const SENTIMENT_RANK: Record<string, number> = { negative: 0, positive: 1, neutral: 2 };
 
@@ -287,6 +289,56 @@ function issueSummary(i: UpgradeIssueRow) {
   };
 }
 
+function daysSince(iso: string | null): number | null {
+  if (!iso) return null;
+  const ms = Date.now() - Date.parse(iso);
+  if (!Number.isFinite(ms)) return null;
+  return Math.max(0, ms / 86_400_000);
+}
+
+function activityWeight(i: UpgradeIssueRow): number {
+  // `updated_at` is too noisy here: bot labels/classification churn can make old
+  // reports look fresh. For open risks, decay from when the report was filed; for
+  // fixed risks, the close time is the relevant activity.
+  const days = daysSince(i.closed_at ?? i.created_at);
+  if (days == null) return 0.5;
+  if (days <= ISSUE_FULL_WEIGHT_DAYS) return 1;
+  if (days >= ISSUE_DECAY_ZERO_DAYS) return 0;
+  return (ISSUE_DECAY_ZERO_DAYS - days) / (ISSUE_DECAY_ZERO_DAYS - ISSUE_FULL_WEIGHT_DAYS);
+}
+
+function issueQuality(i: UpgradeIssueRow): { kind: 'confirmed' | 'unverified' | 'ignored'; weight: number } {
+  const labels = parseIssueLabels(i.labels);
+  if (i.sentiment !== 'negative') return { kind: 'ignored', weight: 0 };
+  if (labels.includes('enhancement') || labels.includes('stale') || labels.includes('clawsweeper:not-repro-on-main')) {
+    return { kind: 'ignored', weight: 0 };
+  }
+  if (labels.includes('clawsweeper:needs-info') || labels.includes('clawsweeper:needs-live-repro')) {
+    return { kind: 'ignored', weight: 0 };
+  }
+  if (i.severity === 'low' || i.functionality === 'docs') return { kind: 'ignored', weight: 0 };
+
+  const recency = activityWeight(i);
+  if (recency <= 0) return { kind: 'ignored', weight: 0 };
+
+  const severityWeight = i.severity === 'critical' ? 2.2 : i.severity === 'high' ? 1.4 : 0.7;
+  const confidence = Number(i.confidence ?? 0);
+  const hasProof = labels.includes('clawsweeper:current-main-repro')
+    || labels.includes('P0')
+    || labels.includes('beta-blocker')
+    || labels.includes('impact:data-loss');
+  const isPlausible = labels.includes('clawsweeper:source-repro')
+    || labels.includes('P1')
+    || labels.includes('regression')
+    || confidence >= 0.55
+    || i.severity === 'critical'
+    || i.severity === 'high';
+
+  if (hasProof) return { kind: 'confirmed', weight: severityWeight * recency };
+  if (isPlausible) return { kind: 'unverified', weight: severityWeight * recency * 0.35 };
+  return { kind: 'ignored', weight: 0 };
+}
+
 function sortIssueRows(rows: UpgradeIssueRow[]) {
   return [...rows].sort((a, b) => {
     const s = (SENTIMENT_RANK[a.sentiment] ?? 9) - (SENTIMENT_RANK[b.sentiment] ?? 9);
@@ -316,10 +368,18 @@ function upgradeIssueRelevant(issue: UpgradeIssueRow, selectedSurfaces: Set<stri
 }
 
 function bucketItems(rows: UpgradeIssueRow[]) {
-  const sorted = sortIssueRows(rows);
+  const annotated = sortIssueRows(rows)
+    .map((issue) => ({ issue, quality: issueQuality(issue) }))
+    .filter((row) => row.quality.kind !== 'ignored');
   return {
-    total: sorted.length,
-    items: sorted.slice(0, UPGRADE_PATH_ITEMS_PER_BUCKET).map(issueSummary),
+    total: annotated.length,
+    rawTotal: rows.length,
+    quality: {
+      confirmed: annotated.filter((row) => row.quality.kind === 'confirmed').length,
+      unverified: annotated.filter((row) => row.quality.kind === 'unverified').length,
+      riskUnits: Number(annotated.reduce((sum, row) => sum + row.quality.weight, 0).toFixed(2)),
+    },
+    items: annotated.slice(0, UPGRADE_PATH_ITEMS_PER_BUCKET).map((row) => issueSummary(row.issue)),
   };
 }
 
