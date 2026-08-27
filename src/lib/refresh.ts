@@ -94,6 +94,12 @@ export async function refresh(): Promise<{
   refreshing = true;
   lastError = null;
   const t0 = Date.now();
+  // Hoisted out of the try so the finally can record the classification outcome
+  // even when the refresh aborts part-way (e.g. a GitHub 403 on a later page
+  // after thousands of classify attempts already failed).
+  let classifiedCount = 0;
+  let classifyFailedCount = 0;
+  let lastClassifyFailure: string | null = null;
 
   try {
     // 1. Pull releases. We over-fetch (×6) because openclaw's prerelease:stable
@@ -224,9 +230,6 @@ export async function refresh(): Promise<{
 
     const MAX_PAGES = 50; // 50 × 100 raw items ≈ several months of openclaw history
     let pagesFetched = 0;
-    let classifiedCount = 0;
-    let classifyFailedCount = 0;
-    let lastClassifyFailure: string | null = null;
     let crossedOldestEver = false;
 
     paginate: for await (const page of paginateIssues(100)) {
@@ -422,11 +425,6 @@ export async function refresh(): Promise<{
     }
 
     lastRefreshAt = new Date().toISOString();
-    lastClassification = {
-      classified: classifiedCount,
-      failed: classifyFailedCount,
-      lastFailure: lastClassifyFailure,
-    };
     invalidateCache();
     return {
       classifiedCount,
@@ -437,6 +435,16 @@ export async function refresh(): Promise<{
     lastError = (e as Error).message;
     throw e;
   } finally {
+    // Record the outcome even for aborted refreshes, but only when something
+    // was actually attempted — a run that dies before reaching the classify
+    // stage must not overwrite the last real signal with zeros.
+    if (classifiedCount + classifyFailedCount > 0) {
+      lastClassification = {
+        classified: classifiedCount,
+        failed: classifyFailedCount,
+        lastFailure: lastClassifyFailure,
+      };
+    }
     refreshing = false;
   }
 }
