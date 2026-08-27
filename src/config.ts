@@ -31,6 +31,10 @@ export const config = {
   openai: {
     apiKey: process.env.OPENAI_API_KEY || '',
     model: env('OPENAI_MODEL', 'gpt-4o-mini'),
+    // Any OpenAI-compatible /chat/completions endpoint works here — e.g.
+    // https://openrouter.ai/api/v1 (OpenRouter model ids are namespaced:
+    // "openai/gpt-4o-mini"). Trailing slashes are trimmed so both forms work.
+    baseUrl: env('OPENAI_BASE_URL', 'https://api.openai.com/v1').replace(/\/+$/, ''),
   },
   server: {
     port: num('PORT', 8787),
