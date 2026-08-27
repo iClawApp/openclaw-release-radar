@@ -258,9 +258,16 @@ function buildPublicPayload() {
 }
 
 api.get('/public', (_req, res) => {
+  // Documented as a public API (README) — allow cross-origin reads.
+  res.set('Access-Control-Allow-Origin', '*');
   const hit = getCached();
   if (hit) { res.json(hit); return; }
   const data = buildPublicPayload();
   setCached(data);
   res.json(data);
+});
+
+// Unknown /api/* paths: JSON 404, not Express's default HTML page.
+api.use((_req, res) => {
+  res.status(404).json({ error: 'not found' });
 });

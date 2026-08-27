@@ -69,9 +69,20 @@ let refreshing = false;
 // Seed from DB so "Not yet refreshed" doesn't show after a restart.
 let lastRefreshAt: string | null = getLastScoredAt();
 let lastError: string | null = null;
+// Outcome of the classification pass of the last completed refresh. Per-issue
+// classify failures are deliberately non-fatal (one bad issue must not kill a
+// refresh), but when EVERY call fails (dead LLM key, exhausted credits) the
+// refresh still "succeeds" and the dashboard keeps serving evidence frozen at
+// the last classified issue. Exposing the counts lets /api/status and the UI
+// say "issue analysis is degraded" instead of silently looking healthy.
+let lastClassification: {
+  classified: number;
+  failed: number;
+  lastFailure: string | null;
+} | null = null;
 
 export function getRefreshState() {
-  return { refreshing, lastRefreshAt, lastError };
+  return { refreshing, lastRefreshAt, lastError, classification: lastClassification };
 }
 
 export async function refresh(): Promise<{
@@ -214,6 +225,8 @@ export async function refresh(): Promise<{
     const MAX_PAGES = 50; // 50 × 100 raw items ≈ several months of openclaw history
     let pagesFetched = 0;
     let classifiedCount = 0;
+    let classifyFailedCount = 0;
+    let lastClassifyFailure: string | null = null;
     let crossedOldestEver = false;
 
     paginate: for await (const page of paginateIssues(100)) {
@@ -268,6 +281,9 @@ export async function refresh(): Promise<{
           upsertClassification(issue.number, cls, issue.updated_at, PROMPT_VERSION);
           classifiedCount++;
         } catch (e) {
+          classifyFailedCount++;
+          // Keep the first line only — OpenAI errors embed a multi-line JSON body.
+          lastClassifyFailure = (e as Error).message.split('\n')[0].slice(0, 300);
           console.error(`[classify] issue #${issue.number} failed:`, (e as Error).message);
         }
       });
@@ -406,6 +422,11 @@ export async function refresh(): Promise<{
     }
 
     lastRefreshAt = new Date().toISOString();
+    lastClassification = {
+      classified: classifiedCount,
+      failed: classifyFailedCount,
+      lastFailure: lastClassifyFailure,
+    };
     invalidateCache();
     return {
       classifiedCount,
