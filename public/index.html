@@ -933,7 +933,12 @@ function enrichIssue(issue) {
 }
 
 function evidenceIssuesForRelease(detail) {
-  if (Array.isArray(detail?.watchIssues)) return detail.watchIssues.map(enrichIssue);
+  // watchIssues (open serious issues opened during this release's reign) is the
+  // sharper evidence set, but an empty list must not blank the panel: fall back
+  // to the attributed-issue sample so open serious/security issues stay visible.
+  if (Array.isArray(detail?.watchIssues) && detail.watchIssues.length) {
+    return detail.watchIssues.map(enrichIssue);
+  }
   if (Array.isArray(detail?.issues)) return detail.issues.map(enrichIssue);
   return [];
 }
@@ -1989,6 +1994,15 @@ async function loadStatus() {
   const label = document.getElementById('updatedLabel');
   try {
     const s = await api('/status');
+    // Refresh can "succeed" while every LLM classification inside it failed
+    // (dead key, exhausted credits). lastRefreshAt then keeps advancing, but the
+    // issue evidence behind the scores is frozen — say so instead of staying quiet.
+    const cls = s.classification;
+    if (cls && cls.failed > 0 && cls.classified === 0) {
+      box.hidden = false;
+      label.textContent = 'Issue analysis is failing — scores may not reflect recent issues';
+      return;
+    }
     const last = s.lastRefreshAt ? Date.parse(s.lastRefreshAt) : NaN;
     const age = Number.isFinite(last) ? Date.now() - last : Infinity;
     if (age <= STALE_AFTER_MS) {

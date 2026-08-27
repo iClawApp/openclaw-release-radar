@@ -5,6 +5,7 @@ import { api } from './routes/api';
 import { refresh } from './lib/refresh';
 
 const app = express();
+app.disable('x-powered-by');
 app.use(express.json());
 app.use('/api', api);
 app.use(express.static(join(__dirname, '..', 'public')));
