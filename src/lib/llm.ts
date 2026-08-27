@@ -298,11 +298,14 @@ export async function classifyIssue(
 ): Promise<IssueClassification> {
   if (!config.openai.apiKey) throw new Error('OPENAI_API_KEY is not set');
 
-  const res = await fetch('https://api.openai.com/v1/chat/completions', {
+  const res = await fetch(`${config.openai.baseUrl}/chat/completions`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${config.openai.apiKey}`,
+      // Ignored by OpenAI; OpenRouter uses them for its app attribution.
+      'HTTP-Referer': 'https://isitstable.iclaw.digital',
+      'X-Title': 'IsItStable',
     },
     body: JSON.stringify({
       model: config.openai.model,
@@ -317,16 +320,22 @@ export async function classifyIssue(
 
   if (!res.ok) {
     const text = await res.text().catch(() => '');
-    throw new Error(`OpenAI ${res.status}: ${text.slice(0, 300)}`);
+    throw new Error(`LLM ${res.status}: ${text.slice(0, 300)}`);
   }
 
   const data = (await res.json()) as OpenAIResp;
-  const raw = data.choices?.[0]?.message?.content ?? '{}';
+  // Gateways (OpenRouter) can answer 200 with an upstream error and no choices.
+  // Falling back to '{}' here would write a fully-default classification to the DB
+  // as if it were real analysis — fail loudly instead so it counts as a failure.
+  const raw = data.choices?.[0]?.message?.content;
+  if (!raw) {
+    throw new Error(`LLM returned no content: ${JSON.stringify(data).slice(0, 300)}`);
+  }
   let parsed: Partial<IssueClassification>;
   try {
     parsed = JSON.parse(raw);
   } catch {
-    throw new Error(`OpenAI returned non-JSON: ${raw.slice(0, 200)}`);
+    throw new Error(`LLM returned non-JSON: ${raw.slice(0, 200)}`);
   }
 
   const normalized = normalize(parsed);
